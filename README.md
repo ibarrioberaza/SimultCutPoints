@@ -3,7 +3,7 @@ Optimal Simultaneous Categorisation of Continuous Variables in Prediction Models
 
 ## Description
 This repository contains code developed based on the methodology proposed by Barrio et al. (2024) to:
-1. Categorize a predictor variable in any regression model where the response variable follows an exponential family distribution.
+1. Categorise a predictor variable in any regression model where the response variable follows an exponential family distribution.
 2. Simultaneously categorise multiple continuous covariates in multivariate settings.
 The methodology employs a computationally efficient approach based on a pseudo-BIC criterion to determine the optimal number of categories for each variable.
 
