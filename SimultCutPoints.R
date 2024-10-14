@@ -7,23 +7,15 @@
 # Sources required --------------------------------------------------------
   source("Functions.R")
 
-# Pseudo_BIC function -----------------------------------------------------
-  # Created from the logLik.gam{mgcv}
-  Pseudo_BIC2 <- function(object, nc){ 
-    b <- BIC(object) + nc*log(length(object$y))
-    b
-  }
-
-# Function similar to catpredi --------------------------------------------
-
-# Inputs:
+# Arguments ---------------------------------------------------------------
   # formula: formula with the response variable and other covariates in the data set to be included in the model.
   # cat.vars: a vector with the names of the variables in the data set to be categorised.
   # data: a data frame containing all needed variables.
   # family: family used in the GAM model.
   # k.min: a numeric value which indicates the minimum cut-off points to be considered for each cat.var.
   # k.max: a numeric value which indicates the maximum cut-off points to be considered for each cat.var.
-# Outputs:
+
+# Values ------------------------------------------------------------------
   # model.smooth: Results for the GAM model
   # data: a data frame containing the original data frame plus the categorised cat.vars.
   # BICps: a data frame with the BICps for all possible models when combine the cat.vars with different k in (k.min,k.max)
@@ -31,9 +23,9 @@
   # formula.gam: the formula used for the GAM model
   # formula.cat: the formula used for the model with the optimal (minimum BICps) cut-off points for each cat.var
   
-  catpredi.multi <- function(formula, cat.vars, data, family, k.min = 1, k.max = 2){
-    
-    data <- na.omit(data[,c(all.vars(formula),cat.vars)])
+# Function ----------------------------------------------------------------
+  SimultCutPoints <- function(formula, cat.vars, data, family, k.min = 1, k.max = 2){ 
+    data <- na.omit(data[,c(all.vars(formula), cat.vars)])
     formula.new <- update(formula, as.formula(paste0("~ . + ", paste0("s(", cat.vars, ", k = 30, m = 5, bs = 'ad')", collapse = "+"))))
     # formula.new.sop <- update(formula, as.formula(paste0("~ . -1 + ", paste0("ad(", cat.vars, ", nseg = 30, nseg.sp = 5)", collapse = "+"))))
     
@@ -53,12 +45,11 @@
       # pred.sop <- predict(mod.sop, type = "terms", se.fit = TRUE)
       # plot(pred.gam$fit[,1], pred.sop$fit[,1])
       
-      
     # 3. Categorisation of p cat.vars with k cut-off points each
-    # k in (k.min, k.max)
-    # We can also think that each covariate has its own (k.min, k.max)
-    # For simplicity we assume the same (k.min, k.max)
-    # Optimal location based on the GAM-model proposal.
+      # k in (k.min, k.max)
+      # We can also think that each covariate has its own (k.min, k.max)
+      # For simplicity we assume the same (k.min, k.max)
+      # Optimal location based on the GAM-model proposal.
       cuts <- lapply(cat.vars, function(x){
         Cuts=array(dim = c(k.max, k.max))
         data.cut <- as.data.frame(array(dim = c(nrow(data), k.max)))
@@ -81,7 +72,7 @@
       data <- cbind(data, do.call("cbind", lapply(cuts, function(x) x$data.cut)))
   
     # 4. Selecting the optimal number of cut-off points
-    # It is not taken into account whether the category is significant
+      # It is not taken into account whether the category is significant
       # eval <- expand.grid(lapply(cat.vars, function(x){paste0(x, ".", paste0("k",1:k.max))}), stringsAsFactors = FALSE)
       eval <- expand.grid(lapply(cat.vars, function(x){1:k.max}), stringsAsFactors = FALSE)
       names(eval) <- paste0("k_", cat.vars)
@@ -106,7 +97,6 @@
         cat(cuts[[cat.vars[i]]]$Cuts[best[,i],1:best[,i]], "\n \n")
       })
       
-      
     # 5. Values to be returned 
       res <- list()
       res$model.smooth <- mod.gam
@@ -117,22 +107,3 @@
       res$formula.cat <- update(formula, as.formula(paste0("~ . +", paste0(cat.vars,".k", best[,1:length(cat.vars)], collapse = "+"))))
       res
   }
-
-# Using the catpredi.multi function --------------------------------------
-  load("eden_imputa.RData")
-  
-  my.test <- catpredi.multi(formula = Muerte.or.UCI ~ 1,
-                            cat.vars = c("PAS.mice","PAD.mice","FR.mice","FC.mice","satO2.mice"), data = eden.imputa,
-                            family = "binomial", k.min = 1, k.max = 4)
-  my.test <- catpredi.multi(formula = Muerte.or.UCI ~ 1,
-                            cat.vars = c("PAS","PAD","FR","FC","satO2"), data = eden.imputa,
-                            family = "binomial", k.min = 1, k.max = 4)
-  my.test <- catpredi.multi(formula = Muerte.or.UCI ~ 1, 
-                            cat.vars = c("PAS.mice","PAD.mice"), data = eden.imputa, 
-                            family = "binomial", k.min = 1, k.max = 4)
-  summary(my.test$model.smooth)
-  plot(my.test$model.smooth)
-  # Best BICps
-  head(my.test$BICps)
-  # Worst BICps
-  tail(my.test$BICps)
