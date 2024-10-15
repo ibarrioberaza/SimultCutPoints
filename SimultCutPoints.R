@@ -9,11 +9,12 @@
 
 # Arguments ---------------------------------------------------------------
   # formula: formula with the response variable and other covariates in the data set to be included in the model.
-  # cat.vars: a vector with the names of the variables in the data set to be categorised.
   # data: a data frame containing all needed variables.
+  # cat.vars: a vector with the names of the variables in the data set to be categorised.
   # family: family used in the GAM model.
   # k.min: a numeric value which indicates the minimum cut-off points to be considered for each cat.var.
   # k.max: a numeric value which indicates the maximum cut-off points to be considered for each cat.var.
+  # k.gam: the dimension of the basis used to represent the smooth term
 
 # Values ------------------------------------------------------------------
   # model.smooth: Results for the GAM model
@@ -24,10 +25,10 @@
   # formula.cat: the formula used for the model with the optimal (minimum BICps) cut-off points for each cat.var
   
 # Function ----------------------------------------------------------------
-  SimultCutPoints <- function(formula, cat.vars, data, family, k.min = 1, k.max = 2){ 
-    data <- na.omit(data[,c(all.vars(formula), cat.vars)])
-    formula.new <- update(formula, as.formula(paste0("~ . + ", paste0("s(", cat.vars, ", k = 30, m = 5, bs = 'ad')", collapse = "+"))))
-    # formula.new.sop <- update(formula, as.formula(paste0("~ . -1 + ", paste0("ad(", cat.vars, ", nseg = 30, nseg.sp = 5)", collapse = "+"))))
+  SimultCutPoints <- function(formula, data, cat.vars, family, k.min = 1, k.max = 2, k.gam = 10){ 
+    data <- na.omit(data[, c(all.vars(formula), cat.vars)])
+    formula.new <- update(formula, as.formula(paste0("~ . + ", paste0("s(", cat.vars, ", k = k.gam, bs = 'ad')", collapse = "+"))))
+    # formula.new.sop <- update(formula, as.formula(paste0("~ . -1 + ", paste0("ad(", cat.vars, ", nseg = k.gam)", collapse = "+"))))
     
     # 1. GAM model for the smooth relationship
       mod.gam <- mgcv::gam(formula = formula.new, data = data, family = family, method = "REML")
